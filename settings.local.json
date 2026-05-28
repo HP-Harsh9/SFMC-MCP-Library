@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(ls -la /mnt/c/Users/harsh.f.patel/.claude/ 2>/dev/null || echo \"Directory not found\")",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\harsh.f.patel\\\\.claude\" -Force -ErrorAction SilentlyContinue | Select-Object Name, LastWriteTime; if \\(!\\(Test-Path \"C:\\\\Users\\\\harsh.f.patel\\\\.claude\"\\)\\) { Write-Output \"Directory does not exist\" })",
+      "Bash(claude mcp *)",
+      "PowerShell(powershell -ExecutionPolicy Bypass -File \"$env:USERPROFILE\\\\.claude\\\\sfmc-refresh.ps1\")"
+    ]
+  }
+}
