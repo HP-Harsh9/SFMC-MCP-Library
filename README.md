@@ -31,6 +31,24 @@ It contains three things:
 
 ---
 
+## Agents & slash commands
+
+The repo ships a ready-to-use Claude Code agent layer under [`.claude/`](.claude): five **task-specific subagents** (model-tiered for cost) and seven **slash commands** that delegate to them. Each agent is **least-privilege** (only its domain's MCE MCP tools) and **blends two execution paths** — it prefers the MCE MCP tools when that server is loaded, and falls back to direct REST/SOAP otherwise.
+
+| Subagent | Model | Scope | Slash command(s) |
+|---|---|---|---|
+| `data-agent` | Haiku | Data Extension schema + row CRUD | `/de-crud` |
+| `automation-agent` | Sonnet | Automation Studio + SQL Query Activities | `/sql-query`, `/automation-design` |
+| `journey-agent` | Sonnet | Journey Builder (splits, waits, contacts in/out) | `/journey-design` |
+| `content-agent` | Sonnet | Content Builder + email / SMS / push + sends | `/content-create`, `/send-message` |
+| `admin-agent` | Haiku | Read-only audit, subscriber & org-config lookups | `/admin-audit` |
+
+**Built-in guardrails:** destructive ops require a dry-run preview + explicit confirmation; async ops report a job ID and poll ≤ 3×; live sends (email/SMS/push) require confirmation; tool lists are least-privilege; tokens are never echoed. Full routing + rules live in [`CLAUDE.md`](CLAUDE.md); definitions in [`.claude/agents/`](.claude/agents) and [`.claude/skills/`](.claude/skills).
+
+> Agents and commands load on Claude Code session start. MCP tools activate when the `sfmc` server is connected; otherwise the agents use the direct REST/SOAP path (`sfmc.py`).
+
+---
+
 ## Architecture
 
 The build is layered: an orchestration agent drives an auth/integration layer, which brokers tokens and HTTP to the SFMC REST/SOAP APIs, which front the platform objects.
@@ -136,6 +154,7 @@ Organized into knowledge folders:
 | **`Inputs/`** | |
 | &nbsp;&nbsp;[`SFMC-Campaign-Brief-Template.xlsx`](Inputs/SFMC-Campaign-Brief-Template.xlsx) | Reusable intake brief that maps 1:1 to SFMC objects |
 | **`Content Memory/` · `Data Extension Memory/`** | Reserved for future content / DE references |
+| **`.claude/agents/` · `.claude/skills/`** | 5 task-specific subagents + 7 slash commands (see [Agents & slash commands](#agents--slash-commands)) |
 
 ---
 
