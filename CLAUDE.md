@@ -104,3 +104,35 @@ REST returns 404 or silently no-ops. Use SOAP `Update`:
 - If a REST call returns 401, refresh the token before retrying — don't loop.
 - Prefer two-step (create + PATCH) for sendable DEs over single POST — the POST-with-sendable path is broken for `sendableSubscriberField`.
 - When unsure about a property name, GET an existing DE and inspect the response — the API often accepts only the canonical name returned by GET.
+
+---
+
+## Task-Specific Agents & Slash Commands (blended with the direct-REST setup)
+
+Five subagents (`.claude/agents/`) + seven slash commands (`.claude/skills/`) route MCE work to the right specialist. They **blend two execution paths**: prefer the **MCE MCP tools** when the `sfmc` MCP server is connected and its tools are loaded; otherwise fall back to the **direct REST/SOAP** path via `python` + `~/.claude/sfmc.py` (see the `sfmc-ops` skill, `Outputs/MCE-MCP-Tool-Catalog.md`, `Automation Memory/AUTOMATION-API-CAPABILITIES.md`).
+
+### Routing table
+| Task type | Subagent | Model | Slash command |
+|---|---|---|---|
+| Data Extension schema / row CRUD | `data-agent` | Haiku | `/de-crud` |
+| Automation Studio design, SQL write/validate/run | `automation-agent` | Sonnet | `/sql-query`, `/automation-design` |
+| Journey Builder design, contacts in/out | `journey-agent` | Sonnet | `/journey-design` |
+| Content Builder + email/SMS/push assets & sends | `content-agent` | Sonnet | `/content-create`, `/send-message` |
+| Read-only audit, subscriber/contact lookups, org config | `admin-agent` | Haiku | `/admin-audit` |
+
+Don't spin up a subagent for a trivial single-step lookup — handle inline.
+
+### Cost-control rules
+1. Fetch DE **schema only** by default — never load rows unless asked.
+2. Async tools: poll status **max 3×**, then hand back the job ID.
+3. Don't re-fetch schemas/lists already retrieved this session.
+4. Prefer read-only tools before write tools when exploring.
+
+### Safety rules
+- **Destructive** ops: show a dry-run preview and wait for explicit "yes/confirm" before executing.
+- **Async** ops: always report the job ID on dispatch.
+- **Live sends** (email/SMS/push to real contacts): show full preview + require explicit confirmation.
+- Never echo OAuth tokens/credentials. Each agent's tool list is least-privilege for its domain.
+- Token TTL ~18 min: on 401 (REST) / HTTP 500 (SOAP), refresh once (`~/.claude/sfmc-refresh.ps1`) then retry.
+
+> Note: the MCP tool prefix in the agent files is `mcp__sfmc__` (the `sfmc` server in `.mcp.json`). If your connected MCE MCP server uses a different name, update the prefix in `.claude/agents/*.md`.
